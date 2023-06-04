@@ -4,6 +4,13 @@ from textblob import TextBlob
 import nltk
 import re
 from flask_cors import CORS
+import argparse
+
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description='YouTube Comment Sentiment Analysis')
+parser.add_argument('--api_key', help='Your YouTube Data API key')
+args = parser.parse_args()
 
 
 nltk.download('punkt')
@@ -16,7 +23,7 @@ CORS(app)
 # Set up the YouTube API client
 api_service_name = "youtube"
 api_version = "v3"
-api_key = ""
+api_key = args.api_key
 
 youtube = googleapiclient.discovery.build(api_service_name, api_version, developerKey=api_key)
 
