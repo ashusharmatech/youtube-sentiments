@@ -5,7 +5,7 @@ import nltk
 import re
 from flask_cors import CORS
 import argparse
-
+import os
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='YouTube Comment Sentiment Analysis')
@@ -119,4 +119,8 @@ def analyze_sentiment():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get the port number from the environment variable (or use a default value)
+    port = int(os.environ.get('PORT', 5000))
+
+    # Run the Flask application
+    app.run(debug=True, host='0.0.0.0', port=port)
