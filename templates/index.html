@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Comment Sentiment Analysis</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>YouTube Comment Sentiment Analysis</h1>
+    
+    <form id="analysisForm">
+        <label for="videoUrl">Enter YouTube Video URL:</label>
+        <input type="text" id="videoUrl" name="videoUrl">
+        <button type="submit">Analyze</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+        $(document).ready(function() {
+            $('#analysisForm').submit(function(event) {
+                event.preventDefault();
+
+                // Get the video URL entered by the user
+                var videoUrl = $('#videoUrl').val();
+
+                // Make the POST request to the API
+                $.ajax({
+                    url: 'http://localhost:5000/analyze_sentiment',
+                    type: 'POST',
+                    data: JSON.stringify({ 'video_url': videoUrl }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        // Display the sentiment score and sentiments
+                        var result = '<p>Sentiment Score: ' + response.score + '</p>';
+                        result += '<p>Sentiments: ' + response.sentiments + '</p>';
+                        $('#result').html(result);
+                    },
+                    error: function(error) {
+                        $('#result').html('<p>An error occurred: ' + error.responseJSON.error + '</p>');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
