@@ -2,89 +2,113 @@
 <html>
 <head>
     <title>YouTube Comment Sentiment Analysis</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
     <h1>YouTube Comment Sentiment Analysis</h1>
     
-    <form id="analysisForm">
-        <label for="videoUrl">Enter YouTube Video URL:</label>
-        <input type="text" id="videoUrl" name="videoUrl">
-        <button type="submit">Analyze</button>
+    <form id="video-form">
+        <label for="video-url">Enter YouTube Video URL:</label>
+        <input type="text" id="video-url" name="video-url" required>
+        <button type="submit">Analyze Sentiment</button>
     </form>
     
-    <div id="result">
-       
+    <div id="results" style="display: none;">
+        <h2>Sentiment Analysis Results</h2>
+        
+        <div id="sentiment-graph"></div>
+        
+        <h3>Comments</h3>
+        <ul id="comment-list"></ul>
     </div>
-    <div id="sentimentChart"></div>
-
+    
     <script>
-        $(document).ready(function() {
-            $('#analysisForm').submit(function(event) {
-                event.preventDefault();
-
-                // Get the video URL entered by the user
-                var videoUrl = $('#videoUrl').val();
-                // Get the current domain URL
-                const domain = window.location.origin;
-
-                // Define the API endpoint URL
-                const url = `${domain}/analyze_sentiment`;
-
-                // Make the POST request to the API
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: JSON.stringify({ 'video_url': videoUrl }),
-                    contentType: 'application/json',
-                    success: function(response) {
-                        // Display the sentiment score and sentiments
-                        var result = '<p>Sentiment Score: ' + response.score + '</p>';
-                        result += '<p>Sentiments: ' + response.sentiments + '</p>';
-                        $('#result').html(result);
-
-                        // Update the sentiment chart
-                        updateSentimentChart(response.sentiments);
-                    },
-                    error: function(error) {
-                        $('#result').html('<p>An error occurred: ' + error.responseJSON.error + '</p>');
-                    }
-                });
+        const form = document.getElementById('video-form');
+        const resultsSection = document.getElementById('results');
+        const commentList = document.getElementById('comment-list');
+        const sentimentGraph = document.getElementById('sentiment-graph');
+        
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const videoUrl = document.getElementById('video-url').value;
+            
+            fetch('/analyze_sentiment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    video_url: videoUrl
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showResults(data);
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                showError('An error occurred while analyzing sentiment.');
+                console.error(error);
             });
-
-            // Function to update the sentiment chart
-            function updateSentimentChart(sentiments) {
-                Highcharts.chart('sentimentChart', {
-                    chart: {
-                        type: 'column'
-                    },
-                    title: {
-                        text: 'Sentiment Chart'
-                    },
-                    xAxis: {
-                        categories: sentiments.map((_, index) => `Comment ${index + 1}`)
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Sentiment'
-                        },
-                        min: 0,
-                        max: 1
-                    },
-                    series: [{
-                        name: 'Sentiment',
-                        data: sentiments,
-                        colorByPoint: true,
-                        colors: sentiments.map((sentiment) => {
-                            const red = 255 - Math.round(sentiment * 255);
-                            const green = Math.round(sentiment * 255);
-                            return `rgb(${red}, ${green}, 0)`;
-                        })
-                    }]
-                });
-            }
         });
+        
+        function showResults(data) {
+            const comments = data.comments;
+            const score = data.score;
+            
+            // Display the sentiment graph
+            const sentimentValues = comments.map(comment => comment[0]);
+            const filteredSentiments = sentimentValues.filter(sentiment => sentiment !== 0);
+
+            plotSentimentGraph(filteredSentiments);
+            
+            // Display the comments with sentiments
+            comments.forEach(comment => {
+                const sentiment = comment[0];
+                const commentText = comment[1];
+                const listItem = document.createElement('li');
+                listItem.textContent = `${sentiment.toFixed(2)}: ${commentText}`;
+                commentList.appendChild(listItem);
+            });
+            
+            // Display the results section
+            resultsSection.style.display = 'block';
+        }
+        
+        function showError(errorMessage) {
+            const errorElement = document.createElement('p');
+            errorElement.textContent = errorMessage;
+            errorElement.style.color = 'red';
+            document.body.appendChild(errorElement);
+        }
+        
+        function plotSentimentGraph(sentimentValues) {
+            const filteredSentiments = sentimentValues.filter(sentiment => sentiment !== 0);
+
+            const data = [{
+                x: filteredSentiments,
+                type: 'histogram',
+                marker: {
+                    color: 'green'
+                }
+            }];
+            
+            const layout = {
+                title: 'Sentiment Distribution',
+                xaxis: {
+                    title: 'Sentiment Value'
+                },
+                yaxis: {
+                    title: 'Frequency'
+                }
+            };
+            
+            Plotly.newPlot(sentimentGraph, data, layout);
+        }
     </script>
 </body>
 </html>

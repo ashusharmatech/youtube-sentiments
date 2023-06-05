@@ -71,17 +71,14 @@ def get_video_comments(video_id):
     return comments
 
 
-
-
 def analyze_comment_sentiment(comment):
     blob = TextBlob(comment)
     sentiment = blob.sentiment.polarity
     return sentiment
 
 
-def get_comments_sentiment(video_id):
+def get_comments_sentiment(comments):
     try:
-        comments = get_video_comments(video_id)
         sentiments = [analyze_comment_sentiment(comment) for comment in comments]
         return sentiments
 
@@ -89,10 +86,17 @@ def get_comments_sentiment(video_id):
         logging.error("Error while analyzing sentiment: %s", str(e))
         raise
 
+
 def calculate_sentiment_score(sentiments):
     total_sentiment = sum(sentiments)
     score = total_sentiment / len(sentiments)
     return score
+
+
+def sort_comments_based_on_sentiments(comments, sentiments):
+    sorted_comments = sorted(zip(sentiments, comments), key=lambda x: x[0], reverse=True)
+    return sorted_comments
+
 
 # Define the route to serve the HTML page
 @app.route('/')
@@ -111,8 +115,11 @@ def analyze_sentiment():
         if not video_id:
             return jsonify({'error': 'Invalid YouTube URL'})
 
+        comments = get_video_comments(video_id)
+
         # Fetch comments and perform sentiment analysis
-        sentiments = get_comments_sentiment(video_id)
+        sentiments = get_comments_sentiment(comments)
+        sorted_comments = sort_comments_based_on_sentiments(comments, sentiments)
         score = calculate_sentiment_score(sentiments)
 
         # Prepare response
@@ -120,7 +127,7 @@ def analyze_sentiment():
             'success': True,
             'message': 'Sentiment analysis completed successfully.',
             'score': score,
-            'sentiments': sentiments
+            'comments': sorted_comments,
         }
 
         return jsonify(response)
