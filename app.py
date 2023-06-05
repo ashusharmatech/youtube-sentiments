@@ -6,6 +6,8 @@ import re
 from flask_cors import CORS
 import argparse
 import os
+import logging
+
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='YouTube Comment Sentiment Analysis')
@@ -50,18 +52,25 @@ def get_video_comments(video_id):
         maxResults=100
     )
 
-    while request:
-        response = request.execute()
-        for item in response["items"]:
-            comment = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
-            comments.append(comment)
+    try:
+        while request:
+            response = request.execute()
+            for item in response["items"]:
+                comment = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
+                comments.append(comment)
 
-        if "nextPageToken" in response:
-            request = youtube.commentThreads().list_next(request, response)
-        else:
-            request = None
+            if "nextPageToken" in response:
+                request = youtube.commentThreads().list_next(request, response)
+            else:
+                request = None
+
+    except Exception as e:
+        logging.error("Error while fetching comments: %s", str(e))
+        raise
 
     return comments
+
+
 
 
 def analyze_comment_sentiment(comment):
@@ -71,10 +80,14 @@ def analyze_comment_sentiment(comment):
 
 
 def get_comments_sentiment(video_id):
-    comments = get_video_comments(video_id)
-    sentiments = [analyze_comment_sentiment(comment) for comment in comments]
-    return sentiments
+    try:
+        comments = get_video_comments(video_id)
+        sentiments = [analyze_comment_sentiment(comment) for comment in comments]
+        return sentiments
 
+    except Exception as e:
+        logging.error("Error while analyzing sentiment: %s", str(e))
+        raise
 
 def calculate_sentiment_score(sentiments):
     total_sentiment = sum(sentiments)

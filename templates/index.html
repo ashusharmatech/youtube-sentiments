@@ -3,6 +3,7 @@
 <head>
     <title>YouTube Comment Sentiment Analysis</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
 <body>
     <h1>YouTube Comment Sentiment Analysis</h1>
@@ -13,7 +14,10 @@
         <button type="submit">Analyze</button>
     </form>
     
-    <div id="result"></div>
+    <div id="result">
+       
+    </div>
+    <div id="sentimentChart"></div>
 
     <script>
         $(document).ready(function() {
@@ -39,12 +43,47 @@
                         var result = '<p>Sentiment Score: ' + response.score + '</p>';
                         result += '<p>Sentiments: ' + response.sentiments + '</p>';
                         $('#result').html(result);
+
+                        // Update the sentiment chart
+                        updateSentimentChart(response.sentiments);
                     },
                     error: function(error) {
                         $('#result').html('<p>An error occurred: ' + error.responseJSON.error + '</p>');
                     }
                 });
             });
+
+            // Function to update the sentiment chart
+            function updateSentimentChart(sentiments) {
+                Highcharts.chart('sentimentChart', {
+                    chart: {
+                        type: 'column'
+                    },
+                    title: {
+                        text: 'Sentiment Chart'
+                    },
+                    xAxis: {
+                        categories: sentiments.map((_, index) => `Comment ${index + 1}`)
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Sentiment'
+                        },
+                        min: 0,
+                        max: 1
+                    },
+                    series: [{
+                        name: 'Sentiment',
+                        data: sentiments,
+                        colorByPoint: true,
+                        colors: sentiments.map((sentiment) => {
+                            const red = 255 - Math.round(sentiment * 255);
+                            const green = Math.round(sentiment * 255);
+                            return `rgb(${red}, ${green}, 0)`;
+                        })
+                    }]
+                });
+            }
         });
     </script>
 </body>
