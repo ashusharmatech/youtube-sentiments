@@ -22,10 +22,15 @@
 
                 // Get the video URL entered by the user
                 var videoUrl = $('#videoUrl').val();
+                // Get the current domain URL
+                const domain = window.location.origin;
+
+                // Define the API endpoint URL
+                const url = `${domain}/analyze_sentiment`;
 
                 // Make the POST request to the API
                 $.ajax({
-                    url: 'http://localhost:5000/analyze_sentiment',
+                    url: url,
                     type: 'POST',
                     data: JSON.stringify({ 'video_url': videoUrl }),
                     contentType: 'application/json',
